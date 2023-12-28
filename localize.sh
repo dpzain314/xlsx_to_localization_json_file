@@ -1,7 +1,7 @@
 #!/bin/zsh
 
 if [ "$#" -ne 2 ]; then
-  echo "Param đâu ku ~~~ Dùng như này ku \\n$0 <input_csv_file> <output_json_folder_path>"
+  echo "Error: \\n$0 <input_csv_file> <output_json_folder_path>"
   exit 1
 fi
 
@@ -16,18 +16,27 @@ IFS=';' read -A column_names <<< "$(head -n 1 "${input_csv_file}")"
 # Lấy số lượng cột từ hàng đầu tiên
 num_columns=${#column_names[@]}
 
-# Check từ hàng thứ hai
+isFieldValid(){
+  local field="$1"
+
+  if [ -n "$field" ] && [[ "$field" =~ ^[[:alnum:]]+$ ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+
 row_number=2
 while IFS=';' read -A values; do
-    # Kiểm tra xem số lượng giá trị trong hàng có bằng số lượng cột không
+
     if [[ ${#values[@]} -eq ${num_columns} ]]; then
-        # Lặp qua từng giá trị trong hàng và tên cột tương ứng
+        
         for i in {2..${num_columns}}; do
             column=${column_names[i]}
             value=${values[i]}
 
-            #Tên cột sai định dạng thì thôi
-            if [[ ! -n "${column}" || ! "${column}" =~ ^[[:alnum:]]+$ ]]; then
+            if ! isFieldValid "${column}"; then
               continue
             fi
 
@@ -37,8 +46,7 @@ while IFS=';' read -A values; do
               echo "{" >> "$json_file"
             fi
 
-            #Key mà sai định dạng thì thôi
-            if [[ -n "${values[1]}" && "${values[1]}" =~ ^[[:alnum:]]+$ ]]; then   
+            if [ -n "$values[1]" ] && [[ "$values[1]" =~ ^[[:alnum:]_]+$ ]]; then
               echo "  \"$values[1]\": \"$value\"," >> "$json_file"
             fi
 
